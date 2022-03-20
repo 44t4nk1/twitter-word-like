@@ -26,10 +26,57 @@ func GetTweets(c *fiber.Ctx) error {
 
 	tweets := GetTweetsByID(os.Getenv("TWITTER_URL") + data.Data.ID + "/tweets?exclude=retweets,replies&tweet.fields=public_metrics&max_results=100")
 
-	return c.Status(200).JSON(tweets.Data)
+	return c.Status(200).JSON(tweets)
 }
 
-func GetTweetsByID(url string) models.UserTweetList {
+func GetTweetsByID(url string) []models.UserTweet {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	err = godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	req.Header.Set("Authorization", os.Getenv("BEARER"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	res, err := client.Do(req)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	defer res.Body.Close()
+
+	var data models.UserTweetList
+
+	json.NewDecoder(res.Body).Decode(&data)
+
+	nextToken := data.Meta.NextToken
+
+	var allTweets []models.UserTweet
+	allTweets = append(allTweets, data.Data...)
+
+	for nextToken != "" {
+		val := GetMoreTweets(url + "&pagination_token=" + nextToken)
+		allTweets = append(allTweets, val.Data...)
+		nextToken = val.Meta.NextToken
+	}
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return allTweets
+}
+
+func GetMoreTweets(url string) models.UserTweetList {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
