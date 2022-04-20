@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/44t4nk1/twitter-word-like/api/models"
 	"github.com/gofiber/fiber/v2"
@@ -26,7 +27,15 @@ func GetTweets(c *fiber.Ctx) error {
 
 	tweets := GetTweetsByID(os.Getenv("TWITTER_URL") + data.Data.ID + "/tweets?exclude=retweets,replies&tweet.fields=public_metrics&max_results=100")
 
-	return c.Status(200).JSON(tweets)
+	return c.Status(200).JSON(SanitiseText(tweets))
+}
+
+func SanitiseText(tweets []models.UserTweet) []models.UserTweet {
+	for _, tweet := range tweets {
+		cleanTweet := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(tweet.Text, "\n", ""), "“", ""), ",", ""), ".", ""), "’", ""), "?", ""), "!", ""), "”", ""), "&gt;", "")
+		tweet.Text = cleanTweet
+	}
+	return tweets
 }
 
 func GetTweetsByID(url string) []models.UserTweet {
