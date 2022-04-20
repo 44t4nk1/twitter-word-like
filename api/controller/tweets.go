@@ -13,6 +13,20 @@ import (
 	"github.com/joho/godotenv"
 )
 
+func SortLikes(tweetWordLike map[string]int) models.PairList {
+	p := make(models.PairList, len(tweetWordLike))
+
+	i := 0
+	for k, v := range tweetWordLike {
+		p[i] = models.Pair{Key: k, Value: v}
+		i++
+	}
+
+	sort.Sort(p)
+
+	return p
+}
+
 func GetTweets(c *fiber.Ctx) error {
 	username := c.Params("user", "")
 	if username == "" {
@@ -44,17 +58,8 @@ func GetTweets(c *fiber.Ctx) error {
 		}
 	}
 
-	p := make(models.PairList, len(tweetWordLike))
-
-	i := 0
-	for k, v := range tweetWordLike {
-		p[i] = models.Pair{Key: k, Value: v}
-		i++
-	}
-
-	sort.Sort(p)
-
-	return c.Status(200).JSON(p)
+	sortedTweets := SortLikes(tweetWordLike)
+	return c.Status(200).JSON(sortedTweets)
 }
 
 func SanitiseText(tweets []models.UserTweet) []models.UserTweetData {
