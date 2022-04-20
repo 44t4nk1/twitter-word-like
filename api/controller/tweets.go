@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/44t4nk1/twitter-word-like/api/models"
@@ -27,7 +28,33 @@ func GetTweets(c *fiber.Ctx) error {
 
 	tweets := GetTweetsByID(os.Getenv("TWITTER_URL") + data.Data.ID + "/tweets?exclude=retweets,replies&tweet.fields=public_metrics&max_results=100")
 
-	return c.Status(200).JSON(SanitiseText(tweets))
+	sanitisedTweets := SanitiseText(tweets)
+
+	tweetWordLike := make(map[string]int)
+
+	for _, tweet := range sanitisedTweets {
+		individualTweetText := strings.Split(tweet.Text, " ")
+		for _, word := range individualTweetText {
+			if val, ok := tweetWordLike[word]; ok {
+				val += tweet.LikeCount
+				tweetWordLike[word] = val
+			} else {
+				tweetWordLike[word] = tweet.LikeCount
+			}
+		}
+	}
+
+	p := make(models.PairList, len(tweetWordLike))
+
+	i := 0
+	for k, v := range tweetWordLike {
+		p[i] = models.Pair{Key: k, Value: v}
+		i++
+	}
+
+	sort.Sort(p)
+
+	return c.Status(200).JSON(p)
 }
 
 func SanitiseText(tweets []models.UserTweet) []models.UserTweetData {
@@ -36,7 +63,7 @@ func SanitiseText(tweets []models.UserTweet) []models.UserTweetData {
 	for _, tweet := range tweets {
 		var tweetData models.UserTweetData
 		tweetData.LikeCount = tweet.PublicMetrics.LikeCount
-		cleanTweet := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(tweet.Text, "\n", ""), "“", ""), ",", ""), ".", ""), "’", ""), "?", ""), "!", ""), "”", ""), "&gt;", "")
+		cleanTweet := strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(tweet.Text, "\n", ""), "“", ""), ",", ""), ".", ""), "’", ""), "?", ""), "!", ""), "”", ""), "&gt;", ""))
 		tweetData.Text = cleanTweet
 		tweetData.LikeCount = tweet.PublicMetrics.LikeCount
 		cleanTweets = append(cleanTweets, tweetData)

@@ -10,9 +10,16 @@ type UserTwitterBase struct {
 	Data UserTwitterDetails `json:"data"`
 }
 
-type UserTweets struct {
-	Tweets []UserTweetData `json:"tweets"`
+type Pair struct {
+	Key   string `json:"key"`
+	Value int    `json:"value"`
 }
+
+func (p PairList) Len() int           { return len(p) }
+func (p PairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p PairList) Less(i, j int) bool { return p[i].Value > p[j].Value }
+
+type PairList []Pair
 
 type UserTweetData struct {
 	LikeCount int    `json:"like_count"`
