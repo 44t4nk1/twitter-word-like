@@ -30,12 +30,19 @@ func GetTweets(c *fiber.Ctx) error {
 	return c.Status(200).JSON(SanitiseText(tweets))
 }
 
-func SanitiseText(tweets []models.UserTweet) []models.UserTweet {
+func SanitiseText(tweets []models.UserTweet) []models.UserTweetData {
+
+	var cleanTweets []models.UserTweetData
 	for _, tweet := range tweets {
+		var tweetData models.UserTweetData
+		tweetData.LikeCount = tweet.PublicMetrics.LikeCount
 		cleanTweet := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(tweet.Text, "\n", ""), "“", ""), ",", ""), ".", ""), "’", ""), "?", ""), "!", ""), "”", ""), "&gt;", "")
-		tweet.Text = cleanTweet
+		tweetData.Text = cleanTweet
+		tweetData.LikeCount = tweet.PublicMetrics.LikeCount
+		cleanTweets = append(cleanTweets, tweetData)
 	}
-	return tweets
+
+	return cleanTweets
 }
 
 func GetTweetsByID(url string) []models.UserTweet {

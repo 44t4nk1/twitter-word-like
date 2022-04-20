@@ -10,6 +10,15 @@ type UserTwitterBase struct {
 	Data UserTwitterDetails `json:"data"`
 }
 
+type UserTweets struct {
+	Tweets []UserTweetData `json:"tweets"`
+}
+
+type UserTweetData struct {
+	LikeCount int    `json:"like_count"`
+	Text      string `json:"text"`
+}
+
 type UserTweet struct {
 	PublicMetrics UserTweetMetrics `json:"public_metrics"`
 	ID            string           `json:"id"`
